@@ -4,20 +4,16 @@ import arrow.core.*
 import arrow.core.extensions.nonemptylist.semigroup.semigroup
 import arrow.core.extensions.validated.applicative.applicative
 
-fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>, ValidatedOrderLine> {
-    val orderQuantityValidated: Validated<NonEmptyList<ValidationError>, OrderQuantity> =
-        Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
-            .tupled(
-                ProductCode(productCode).toValidatedNel(),
-                Quantity(quantity).valid().toValidatedNel()
-            ).fix().fold({ it.invalid() }, { (a, b) ->
-                OrderQuantity(a, b).toValidatedNel()
-            })
-
-    val validatedOrderValidated =
-        orderQuantityValidated.fold({ it.invalid() },
+fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>, ValidatedOrderLine> =
+    Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+        .tupled(
+            ProductCode(productCode).toValidatedNel(),
+            Quantity(quantity).valid().toValidatedNel()
+        ).fix().fold({ it.invalid() }, { (a, b) ->
+            OrderQuantity(a, b).toValidatedNel()
+        }).fold({ it.invalid() },
             { orderQuantity ->
-                val validatedOrderValidated = Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+                Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
                     .tupled(
                         OrderLineId(orderLineId).toValidatedNel(),
                         ProductCode(productCode).toValidatedNel()
@@ -25,10 +21,7 @@ fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>,
                         { (orderLineId, productCode) ->
                             ValidatedOrderLine(orderLineId, productCode, orderQuantity).validNel()
                         })
-                validatedOrderValidated
             })
-    return validatedOrderValidated
-}
 
 fun UnvalidatedCustomerInfo.toCustomerInfo(): Validated<NonEmptyList<ValidationError>, CustomerInfo> =
     Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
