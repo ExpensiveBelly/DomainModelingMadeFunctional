@@ -4,8 +4,10 @@ import arrow.core.*
 import arrow.core.extensions.nonemptylist.semigroup.semigroup
 import arrow.core.extensions.validated.applicative.applicative
 
+private val validatedApplicative = Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+
 fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>, ValidatedOrderLine> =
-    Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+    validatedApplicative
         .tupled(
             ProductCode(productCode).toValidatedNel(),
             Quantity(quantity).valid().toValidatedNel()
@@ -13,7 +15,7 @@ fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>,
             OrderQuantity(a, b).toValidatedNel()
         }).fold({ it.invalid() },
             { orderQuantity ->
-                Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+                validatedApplicative
                     .tupled(
                         OrderLineId(orderLineId).toValidatedNel(),
                         ProductCode(productCode).toValidatedNel()
@@ -24,7 +26,7 @@ fun UnvalidatedOrderLine.toValidatedOrderLine(): Validated<Nel<ValidationError>,
             })
 
 fun UnvalidatedCustomerInfo.toCustomerInfo(): Validated<NonEmptyList<ValidationError>, CustomerInfo> =
-    Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+    validatedApplicative
         .tupled(
             String50(firstName).toValidatedNel(),
             String50(lastName).toValidatedNel(),
@@ -36,7 +38,7 @@ fun UnvalidatedCustomerInfo.toCustomerInfo(): Validated<NonEmptyList<ValidationE
             })
 
 fun UnvalidatedAddress.toAddress(): Validated<NonEmptyList<ValidationError>, Address> =
-    Validated.applicative<Nel<ValidationError>>(Nel.semigroup())
+    validatedApplicative
         .tupled(
             String50(addressLine1).toValidatedNel(),
             String50(city).toValidatedNel(),
@@ -51,7 +53,7 @@ fun UnvalidatedAddress.toAddress(): Validated<NonEmptyList<ValidationError>, Add
                 Option.fromNullable(line2).map { validatedLine2 ->
                     Option.fromNullable(line3).map { validatedLine3 ->
                         Option.fromNullable(line4).map { validatedLine4 ->
-                            Validated.applicative<Nel<ValidationError>>(Nel.semigroup()).tupled(
+                            validatedApplicative.tupled(
                                 validatedLine2.toValidatedNel(),
                                 validatedLine3.toValidatedNel(),
                                 validatedLine4.toValidatedNel()
@@ -66,7 +68,7 @@ fun UnvalidatedAddress.toAddress(): Validated<NonEmptyList<ValidationError>, Add
                                 ).validNel()
                             })
                         }.getOrElse {
-                            Validated.applicative<Nel<ValidationError>>(Nel.semigroup()).tupled(
+                            validatedApplicative.tupled(
                                 validatedLine2.toValidatedNel(),
                                 validatedLine3.toValidatedNel()
                             ).fix().fold({ it.invalid() }, { (line2String50, line3String50) ->
